@@ -2083,11 +2083,52 @@ app.post('/api/projects/:projectName/transcribe', authenticateToken, async (req,
                 return res.status(400).json({ error: 'No audio file provided (field name: audio)' });
             }
 
-            const mimeType = req.file.mimetype || 'audio/webm';
-            const base64 = req.file.buffer.toString('base64');
-            const dataUri = `data:${mimeType};base64,${base64}`;
+            const rawMime = req.file.mimetype || 'audio/webm';
+            const mimeType = rawMime.split(';')[0].trim() || 'audio/webm';
+            const extFromMime = {
+                'audio/webm': 'webm',
+                'audio/ogg': 'ogg',
+                'audio/mpeg': 'mp3',
+                'audio/mp3': 'mp3',
+                'audio/wav': 'wav',
+                'audio/wave': 'wav',
+                'audio/x-wav': 'wav',
+                'audio/mp4': 'mp4',
+                'audio/x-m4a': 'm4a',
+                'audio/flac': 'flac',
+            }[mimeType] || 'webm';
+            const fileName = `cloudcli-stt-${Date.now()}.${extFromMime}`;
 
             try {
+                // Wizper's audio_url accepts https URLs and some data-URI MIMEs
+                // (mp3 works, webm/wav don't). Uploading the blob to fal storage
+                // first and passing the returned URL covers all browser codecs.
+                const initResp = await fetch('https://rest.alpha.fal.ai/storage/upload/initiate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Key ${process.env.FAL_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ file_name: fileName, content_type: mimeType }),
+                });
+                if (!initResp.ok) {
+                    const errText = await initResp.text();
+                    console.error('[Wizper] storage initiate error', initResp.status, errText);
+                    return res.status(502).json({ error: 'Transcription failed', status: initResp.status, details: errText });
+                }
+                const { file_url: fileUrl, upload_url: uploadUrl } = await initResp.json();
+
+                const putResp = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': mimeType },
+                    body: req.file.buffer,
+                });
+                if (!putResp.ok) {
+                    const errText = await putResp.text();
+                    console.error('[Wizper] storage put error', putResp.status, errText);
+                    return res.status(502).json({ error: 'Transcription failed', status: putResp.status, details: errText });
+                }
+
                 const falResp = await fetch('https://fal.run/fal-ai/wizper', {
                     method: 'POST',
                     headers: {
@@ -2095,7 +2136,7 @@ app.post('/api/projects/:projectName/transcribe', authenticateToken, async (req,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        audio_url: dataUri,
+                        audio_url: fileUrl,
                         task: 'transcribe',
                         language: req.body.language || undefined,
                         chunk_level: 'segment',

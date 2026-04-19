@@ -383,7 +383,11 @@ export default function ChatComposer({
 
             <button
               type="button"
-              onClick={() => documentInputRef.current?.click()}
+              onClick={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                documentInputRef.current?.click();
+              }}
               disabled={isUploadingDocuments}
               className="absolute left-20 top-1/2 -translate-y-1/2 transform rounded-xl p-2 transition-colors hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-60"
               title={isUploadingDocuments ? 'Uploading…' : 'Attach document (PDF, DOCX, EPUB, XLSX, TXT…)'}
