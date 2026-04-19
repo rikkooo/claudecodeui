@@ -2000,6 +2000,68 @@ app.post('/api/projects/:projectName/upload-images', authenticateToken, async (r
     }
 });
 
+// Document upload endpoint — writes files to <project.path>/docs/uploaded/
+app.post('/api/projects/:projectName/upload-document', authenticateToken, async (req, res) => {
+    try {
+        const multer = (await import('multer')).default;
+        const path = (await import('path')).default;
+        const fs = (await import('fs')).promises;
+
+        const { projectName } = req.params;
+        const projectPath = await extractProjectDirectory(projectName);
+        if (!projectPath) {
+            return res.status(404).json({ error: `Project ${projectName} not found or has no resolvable directory` });
+        }
+
+        const uploadDir = path.join(projectPath, 'docs', 'uploaded');
+        await fs.mkdir(uploadDir, { recursive: true });
+
+        const storage = multer.diskStorage({
+            destination: async (req, file, cb) => cb(null, uploadDir),
+            filename: (req, file, cb) => {
+                const sanitized = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+                cb(null, sanitized);
+            },
+        });
+
+        const allowedExt = new Set(['.pdf', '.docx', '.epub', '.xlsx', '.xls', '.txt', '.md', '.csv', '.rtf', '.odt', '.pptx']);
+        const fileFilter = (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            if (allowedExt.has(ext)) {
+                cb(null, true);
+            } else {
+                cb(new Error(`File type "${ext}" not allowed. Accepted: ${[...allowedExt].join(', ')}`));
+            }
+        };
+
+        const upload = multer({
+            storage,
+            fileFilter,
+            limits: { fileSize: 50 * 1024 * 1024, files: 10 },
+        }).array('documents', 10);
+
+        upload(req, res, async (err) => {
+            if (err) return res.status(400).json({ error: err.message });
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({ error: 'No document files provided (field name: documents)' });
+            }
+
+            const processed = req.files.map((file) => ({
+                name: file.filename,
+                originalName: file.originalname,
+                size: file.size,
+                mimeType: file.mimetype,
+                relativePath: path.posix.join('docs', 'uploaded', file.filename),
+                mention: `@${path.posix.join('docs', 'uploaded', file.filename)}`,
+            }));
+            res.json({ documents: processed });
+        });
+    } catch (error) {
+        console.error('Error in upload-document endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Audio transcription endpoint (fal.ai Wizper proxy)
 app.post('/api/projects/:projectName/transcribe', authenticateToken, async (req, res) => {
     try {
