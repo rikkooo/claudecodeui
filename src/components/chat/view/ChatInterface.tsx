@@ -159,6 +159,8 @@ function ChatInterface({
     isRecording,
     isTranscribing,
     handleMicClick,
+    isUploadingDocuments,
+    handleDocumentFiles,
     handleSubmit,
     handleInputChange,
     handleKeyDown,
@@ -388,6 +390,8 @@ function ChatInterface({
           isRecording={isRecording}
           isTranscribing={isTranscribing}
           onMicClick={handleMicClick}
+          isUploadingDocuments={isUploadingDocuments}
+          onDocumentFiles={handleDocumentFiles}
           inputHighlightRef={inputHighlightRef}
           renderInputWithMentions={renderInputWithMentions}
           textareaRef={textareaRef}

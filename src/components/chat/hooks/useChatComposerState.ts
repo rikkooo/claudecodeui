@@ -146,6 +146,7 @@ export function useChatComposerState({
   const [thinkingMode, setThinkingMode] = useState('none');
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -453,17 +454,6 @@ export function useChatComposerState({
     [handleImageFiles],
   );
 
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'],
-    },
-    maxSize: 5 * 1024 * 1024,
-    maxFiles: 5,
-    onDrop: handleImageFiles,
-    noClick: true,
-    noKeyboard: true,
-  });
-
   const insertTextAtCaret = useCallback((text: string) => {
     const textarea = textareaRef.current;
     if (!textarea) {
@@ -486,6 +476,80 @@ export function useChatComposerState({
       textarea.setSelectionRange(caret, caret);
     });
   }, []);
+
+  const handleDocumentFiles = useCallback(
+    async (files: File[]) => {
+      if (!selectedProject) {
+        addMessage({
+          type: 'error',
+          content: 'Select a project before uploading documents.',
+          timestamp: new Date(),
+        });
+        return;
+      }
+      const valid = files.filter((f) => f && f.size > 0 && f.size <= 50 * 1024 * 1024);
+      if (valid.length === 0) return;
+      setIsUploadingDocuments(true);
+      try {
+        const formData = new FormData();
+        valid.forEach((f) => formData.append('documents', f));
+        const response = await authenticatedFetch(
+          `/api/projects/${selectedProject.name}/upload-document`,
+          { method: 'POST', headers: {}, body: formData },
+        );
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || `Upload failed (HTTP ${response.status})`);
+        }
+        const { documents } = await response.json();
+        const mentions = (documents ?? []).map((d: { mention: string }) => d.mention).filter(Boolean).join(' ');
+        if (mentions) insertTextAtCaret(mentions);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown upload error';
+        console.error('Document upload failed:', error);
+        addMessage({
+          type: 'error',
+          content: `Document upload failed: ${message}`,
+          timestamp: new Date(),
+        });
+      } finally {
+        setIsUploadingDocuments(false);
+      }
+    },
+    [selectedProject, addMessage, insertTextAtCaret],
+  );
+
+  const handleMixedDrop = useCallback(
+    (files: File[]) => {
+      const images = files.filter((f) => f.type?.startsWith('image/'));
+      const documents = files.filter((f) => !f.type?.startsWith('image/'));
+      if (images.length > 0) handleImageFiles(images);
+      if (documents.length > 0) void handleDocumentFiles(documents);
+    },
+    [handleImageFiles, handleDocumentFiles],
+  );
+
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'],
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/epub+zip': ['.epub'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.ms-excel': ['.xls'],
+      'text/plain': ['.txt'],
+      'text/markdown': ['.md', '.markdown'],
+      'text/csv': ['.csv'],
+      'application/rtf': ['.rtf'],
+      'application/vnd.oasis.opendocument.text': ['.odt'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+    },
+    maxSize: 50 * 1024 * 1024,
+    maxFiles: 10,
+    onDrop: handleMixedDrop,
+    noClick: true,
+    noKeyboard: true,
+  });
 
   const stopAudioStream = useCallback(() => {
     audioStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -1127,6 +1191,8 @@ export function useChatComposerState({
     isRecording,
     isTranscribing,
     handleMicClick,
+    isUploadingDocuments,
+    handleDocumentFiles,
     handleSubmit,
     handleInputChange,
     handleKeyDown,

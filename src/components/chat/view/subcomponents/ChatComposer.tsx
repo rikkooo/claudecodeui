@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   ChangeEvent,
@@ -78,6 +79,8 @@ interface ChatComposerProps {
   isRecording: boolean;
   isTranscribing: boolean;
   onMicClick: () => void;
+  isUploadingDocuments: boolean;
+  onDocumentFiles: (files: File[]) => void;
   inputHighlightRef: RefObject<HTMLDivElement>;
   renderInputWithMentions: (text: string) => ReactNode;
   textareaRef: RefObject<HTMLTextAreaElement>;
@@ -137,6 +140,8 @@ export default function ChatComposer({
   isRecording,
   isTranscribing,
   onMicClick,
+  isUploadingDocuments,
+  onDocumentFiles,
   inputHighlightRef,
   renderInputWithMentions,
   textareaRef,
@@ -154,6 +159,15 @@ export default function ChatComposer({
   sendByCtrlEnter,
 }: ChatComposerProps) {
   const { t } = useTranslation('chat');
+  const documentInputRef = useRef<HTMLInputElement | null>(null);
+
+  const DOCUMENT_ACCEPT = '.pdf,.docx,.epub,.xlsx,.xls,.txt,.md,.markdown,.csv,.rtf,.odt,.pptx';
+
+  const handleDocumentInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length > 0) onDocumentFiles(files);
+    event.target.value = '';
+  };
   const textareaRect = textareaRef.current?.getBoundingClientRect();
   const commandMenuPosition = {
     top: textareaRect ? Math.max(16, textareaRect.top - 316) : 0,
@@ -289,7 +303,7 @@ export default function ChatComposer({
         >
           <input {...getInputProps()} />
           <div ref={inputHighlightRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-            <div className="chat-input-placeholder block w-full whitespace-pre-wrap break-words py-1.5 pl-20 pr-20 text-base leading-6 text-transparent sm:py-4 sm:pr-40">
+            <div className="chat-input-placeholder block w-full whitespace-pre-wrap break-words py-1.5 pl-28 pr-20 text-base leading-6 text-transparent sm:py-4 sm:pr-40">
               {renderInputWithMentions(input)}
             </div>
           </div>
@@ -307,7 +321,7 @@ export default function ChatComposer({
               onBlur={() => onInputFocusChange?.(false)}
               onInput={onTextareaInput}
               placeholder={placeholder}
-              className="chat-input-placeholder block max-h-[40vh] min-h-[50px] w-full resize-none overflow-y-auto rounded-2xl bg-transparent py-1.5 pl-20 pr-20 text-base leading-6 text-foreground placeholder-muted-foreground/50 transition-all duration-200 focus:outline-none sm:max-h-[300px] sm:min-h-[80px] sm:py-4 sm:pr-40"
+              className="chat-input-placeholder block max-h-[40vh] min-h-[50px] w-full resize-none overflow-y-auto rounded-2xl bg-transparent py-1.5 pl-28 pr-20 text-base leading-6 text-foreground placeholder-muted-foreground/50 transition-all duration-200 focus:outline-none sm:max-h-[300px] sm:min-h-[80px] sm:py-4 sm:pr-40"
               style={{ height: '50px' }}
             />
 
@@ -356,6 +370,36 @@ export default function ChatComposer({
               )}
             </button>
 
+            <input
+              ref={documentInputRef}
+              type="file"
+              multiple
+              accept={DOCUMENT_ACCEPT}
+              onChange={handleDocumentInputChange}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+
+            <button
+              type="button"
+              onClick={() => documentInputRef.current?.click()}
+              disabled={isUploadingDocuments}
+              className="absolute left-20 top-1/2 -translate-y-1/2 transform rounded-xl p-2 transition-colors hover:bg-accent/60 disabled:cursor-not-allowed disabled:opacity-60"
+              title={isUploadingDocuments ? 'Uploading…' : 'Attach document (PDF, DOCX, EPUB, XLSX, TXT…)'}
+            >
+              {isUploadingDocuments ? (
+                <svg className="h-5 w-5 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.25 2.25v4.5a1.5 1.5 0 001.5 1.5h4.5M8.25 13.5h7.5m-7.5 3.75h4.5M19.5 9v10.5a1.5 1.5 0 01-1.5 1.5H6a1.5 1.5 0 01-1.5-1.5V4.5A1.5 1.5 0 016 3h8.25L19.5 9z" />
+                </svg>
+              )}
+            </button>
+
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
@@ -375,7 +419,7 @@ export default function ChatComposer({
             </button>
 
             <div
-              className={`pointer-events-none absolute bottom-1 left-20 right-14 hidden text-xs text-muted-foreground/50 transition-opacity duration-200 sm:right-40 sm:block ${
+              className={`pointer-events-none absolute bottom-1 left-28 right-14 hidden text-xs text-muted-foreground/50 transition-opacity duration-200 sm:right-40 sm:block ${
                 input.trim() ? 'opacity-0' : 'opacity-100'
               }`}
             >
