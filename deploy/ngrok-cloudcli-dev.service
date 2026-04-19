@@ -1,0 +1,20 @@
+[Unit]
+Description=Ngrok tunnel for CloudCLI UI dev (cloudcli-dev.conectta.co -> 127.0.0.1:3002, Google OAuth)
+After=network-online.target cloudcli-dev.service
+Wants=network-online.target
+Requires=cloudcli-dev.service
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin
+EnvironmentFile=-/home/admin/.env
+ExecStart=/usr/local/bin/ngrok http 3002 --url=cloudcli-dev.conectta.co --traffic-policy-file=/home/admin/.config/ngrok/cloudcli-dev-policy.yml --log=stdout
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

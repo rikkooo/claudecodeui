@@ -1,0 +1,22 @@
+[Unit]
+Description=CloudCLI UI (Conectta fork, dev build on port 3002)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/projects/claudecodeui
+EnvironmentFile=-/home/admin/projects/claudecodeui/.env
+Environment=HOME=/home/admin
+Environment=PATH=/home/admin/.nvm/versions/node/v22.22.2/bin:/home/admin/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=CLAUDE_CLI_PATH=/home/admin/.local/bin/claude
+ExecStart=/home/admin/.nvm/versions/node/v22.22.2/bin/node dist-server/server/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
