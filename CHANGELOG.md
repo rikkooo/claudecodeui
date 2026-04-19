@@ -3,6 +3,16 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.3](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.2...v1.29.5-conectta.3) (2026-04-20)
+
+Cyberpunk-relax goes whole-stack: xterm.js now matches the rest of the UI and the oh-my-posh prompt.
+
+### New Features
+
+* **terminal:** bundle `JetBrainsMono Nerd Font` (Mono variant, Regular + Bold) as a self-hosted web asset under `public/fonts/` with `@font-face` declarations in `index.css`. Powerline separators, diamond segments, git/folder/Nerd-Font glyphs now render in the CloudCLI web terminal without any client-side font install
+* **terminal:** retone xterm.js ANSI palette (16 colors + background / foreground / cursor / selection) to the cyberpunk-relax palette — `sage` for green, `amber` for yellow, `indigo` for blue, `lavender` for magenta, `rose`-shifted red, muted cool `cyan`. `ls --color=auto`, `git diff`, `grep --color`, `bat`, and every other ANSI-aware tool inherit the palette automatically
+
+
 ## [1.29.5-conectta.2](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.1...v1.29.5-conectta.2) (2026-04-20)
 
 Peaceful-cyberpunk theme pass + node-pty terminal plugin fix.
