@@ -2000,6 +2000,66 @@ app.post('/api/projects/:projectName/upload-images', authenticateToken, async (r
     }
 });
 
+// Audio transcription endpoint (fal.ai Wizper proxy)
+app.post('/api/projects/:projectName/transcribe', authenticateToken, async (req, res) => {
+    try {
+        if (!process.env.FAL_KEY) {
+            return res.status(500).json({ error: 'FAL_KEY is not configured on the server' });
+        }
+
+        const multer = (await import('multer')).default;
+        const upload = multer({
+            storage: multer.memoryStorage(),
+            limits: { fileSize: 25 * 1024 * 1024, files: 1 },
+        }).single('audio');
+
+        upload(req, res, async (err) => {
+            if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+            if (!req.file) {
+                return res.status(400).json({ error: 'No audio file provided (field name: audio)' });
+            }
+
+            const mimeType = req.file.mimetype || 'audio/webm';
+            const base64 = req.file.buffer.toString('base64');
+            const dataUri = `data:${mimeType};base64,${base64}`;
+
+            try {
+                const falResp = await fetch('https://fal.run/fal-ai/wizper', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Key ${process.env.FAL_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        audio_url: dataUri,
+                        task: 'transcribe',
+                        language: req.body.language || undefined,
+                        chunk_level: 'segment',
+                        version: '3',
+                    }),
+                });
+
+                if (!falResp.ok) {
+                    const errText = await falResp.text();
+                    console.error('[Wizper] upstream error', falResp.status, errText);
+                    return res.status(502).json({ error: 'Transcription failed', status: falResp.status, details: errText });
+                }
+
+                const data = await falResp.json();
+                res.json({ text: data.text || '', chunks: data.chunks });
+            } catch (fetchError) {
+                console.error('[Wizper] fetch error', fetchError);
+                res.status(502).json({ error: 'Failed to reach transcription service', details: fetchError.message });
+            }
+        });
+    } catch (error) {
+        console.error('Error in transcribe endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Get token usage for a specific session
 app.get('/api/projects/:projectName/sessions/:sessionId/token-usage', authenticateToken, async (req, res) => {
     try {
