@@ -154,6 +154,18 @@
     --nav-input-bg: 240 4% 14% / 0.55;
     --nav-input-focus-ring: 248 96% 66% / 0.25;
   }
+
+  /* Cyberpunk — retone hardcoded bright greens (terminal previews, Bash output,
+     success badges) toward a softer sage-lime so the acid doesn't scream. */
+  .cyberpunk .text-green-200 { color: hsl(85 55% 84%); }
+  .cyberpunk .text-green-300 { color: hsl(85 52% 78%); }
+  .cyberpunk .text-green-400 { color: hsl(85 50% 70%); }
+  .cyberpunk .text-green-500 { color: hsl(85 48% 63%); }
+  .cyberpunk .text-green-600 { color: hsl(85 44% 56%); }
+  .cyberpunk .text-green-700 { color: hsl(85 40% 48%); }
+  .cyberpunk .bg-green-400 { background-color: hsl(85 48% 62%); }
+  .cyberpunk .bg-green-500 { background-color: hsl(85 45% 55%); }
+  .cyberpunk .bg-green-600 { background-color: hsl(85 42% 48%); }
 }
 
 @layer base {
