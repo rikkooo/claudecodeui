@@ -3,6 +3,34 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.1](https://github.com/rikkooo/claudecodeui/compare/v1.29.5...v1.29.5-conectta.1) (2026-04-20)
+
+Conectta fork. Parallel build on :3002 exposed at `cloudcli-dev.conectta.co` (Google OAuth, single-email allowlist). Stock instance on :3001 / `cloudcli.conectta.co` untouched.
+
+### New Features
+
+* **transcribe:** `POST /api/projects/:projectName/transcribe` — browser mic via `MediaRecorder` → fal.ai Wizper → transcript inserted at textarea caret. Blobs go through `fal.run/storage/upload` because Wizper rejects `audio/webm` data-URIs ([86bc22c](https://github.com/rikkooo/claudecodeui/commit/86bc22c), [561758b](https://github.com/rikkooo/claudecodeui/commit/561758b), [cc6ee13](https://github.com/rikkooo/claudecodeui/commit/cc6ee13))
+* **upload:** `POST /api/projects/:projectName/upload-document` — multipart upload of PDF/DOCX/EPUB/XLSX/XLS/PPTX/ODT/RTF/TXT/MD/CSV (50 MB/file, up to 10 files) to `<project.path>/docs/uploaded/`. Response returns `@docs/uploaded/<name>` mentions that the composer auto-inserts at the caret ([ecb50c5](https://github.com/rikkooo/claudecodeui/commit/ecb50c5), [e8155e0](https://github.com/rikkooo/claudecodeui/commit/e8155e0))
+* **composer:** three-button toolbar (image / mic / attach-document), single dropzone routes dropped files by MIME — images go to the existing preview, docs upload immediately and insert their mention ([e8155e0](https://github.com/rikkooo/claudecodeui/commit/e8155e0))
+* **skills:** ship `extract-document`, `pdf-to-text`, `docx-to-text`, `epub-to-text`, `xlsx-to-text` under `skills/`. `scripts/install-skills.sh` copies them into `~/.claude/skills/` so Claude extracts text from uploaded binaries without dumping them into its context window ([9a27ffd](https://github.com/rikkooo/claudecodeui/commit/9a27ffd))
+* **deploy:** systemd + ngrok units for the Conectta dev instance live under `deploy/` (`cloudcli-dev.service`, `ngrok-cloudcli-dev.service`, `cloudcli-dev-policy.yml`) ([c9ffc8e](https://github.com/rikkooo/claudecodeui/commit/c9ffc8e))
+* **docs:** `docs/UPLOAD_AND_TRANSCRIBE.md` covers the new endpoints, MIME allowlist, skill install, and required system binaries (poppler-utils, pandoc, xlsx2csv)
+
+### Required env
+
+Add to `.env`:
+
+```
+FAL_KEY=<your fal.ai key>
+```
+
+### Required system binaries (for text extraction skills)
+
+```
+sudo apt install -y poppler-utils pandoc xlsx2csv
+```
+
+
 ## [1.29.5](https://github.com/siteboon/claudecodeui/compare/v1.29.4...v1.29.5) (2026-04-16)
 
 ### Bug Fixes
