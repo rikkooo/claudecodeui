@@ -144,6 +144,13 @@ export function useChatComposerState({
   const [imageErrors, setImageErrors] = useState<Map<string, string>>(new Map());
   const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
   const [thinkingMode, setThinkingMode] = useState('none');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const recordingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const inputHighlightRef = useRef<HTMLDivElement>(null);
@@ -456,6 +463,162 @@ export function useChatComposerState({
     noClick: true,
     noKeyboard: true,
   });
+
+  const insertTextAtCaret = useCallback((text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setInput((prev) => prev + text);
+      inputValueRef.current = (inputValueRef.current ?? '') + text;
+      return;
+    }
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? start;
+    const before = textarea.value.slice(0, start);
+    const after = textarea.value.slice(end);
+    const needsLeadingSpace = before.length > 0 && !/\s$/.test(before);
+    const insertion = (needsLeadingSpace ? ' ' : '') + text;
+    const next = before + insertion + after;
+    setInput(next);
+    inputValueRef.current = next;
+    requestAnimationFrame(() => {
+      const caret = before.length + insertion.length;
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+    });
+  }, []);
+
+  const stopAudioStream = useCallback(() => {
+    audioStreamRef.current?.getTracks().forEach((track) => track.stop());
+    audioStreamRef.current = null;
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+  }, []);
+
+  const transcribeAudio = useCallback(
+    async (blob: Blob) => {
+      if (!selectedProject) {
+        addMessage({
+          type: 'error',
+          content: 'No project selected for transcription.',
+          timestamp: new Date(),
+        });
+        return;
+      }
+      setIsTranscribing(true);
+      try {
+        const formData = new FormData();
+        const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
+        formData.append('audio', blob, `recording.${ext}`);
+        const response = await authenticatedFetch(
+          `/api/projects/${selectedProject.name}/transcribe`,
+          { method: 'POST', headers: {}, body: formData },
+        );
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || `Transcription failed (HTTP ${response.status})`);
+        }
+        const { text } = await response.json();
+        if (typeof text === 'string' && text.trim().length > 0) {
+          insertTextAtCaret(text.trim());
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown transcription error';
+        console.error('Transcription failed:', error);
+        addMessage({
+          type: 'error',
+          content: `Transcription failed: ${message}`,
+          timestamp: new Date(),
+        });
+      } finally {
+        setIsTranscribing(false);
+      }
+    },
+    [selectedProject, addMessage, insertTextAtCaret],
+  );
+
+  const startRecording = useCallback(async () => {
+    if (isRecording || isTranscribing) return;
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      addMessage({
+        type: 'error',
+        content: 'Microphone is not available in this browser.',
+        timestamp: new Date(),
+      });
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
+      audioChunksRef.current = [];
+      const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', ''];
+      const mimeType = preferredTypes.find((t) => !t || MediaRecorder.isTypeSupported(t)) ?? '';
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        stopAudioStream();
+        setIsRecording(false);
+        const chunks = audioChunksRef.current;
+        audioChunksRef.current = [];
+        if (chunks.length === 0) return;
+        const blobType = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type: blobType });
+        if (blob.size < 256) return;
+        void transcribeAudio(blob);
+      };
+      recorder.start();
+      setIsRecording(true);
+      recordingTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 120000);
+    } catch (error) {
+      stopAudioStream();
+      setIsRecording(false);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      addMessage({
+        type: 'error',
+        content: `Microphone access failed: ${message}`,
+        timestamp: new Date(),
+      });
+    }
+  }, [isRecording, isTranscribing, addMessage, stopAudioStream, transcribeAudio]);
+
+  const stopRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === 'recording') {
+      recorder.stop();
+    } else {
+      stopAudioStream();
+      setIsRecording(false);
+    }
+  }, [stopAudioStream]);
+
+  const handleMicClick = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      void startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current?.state === 'recording') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+      stopAudioStream();
+    };
+  }, [stopAudioStream]);
 
   const handleSubmit = useCallback(
     async (
@@ -961,6 +1124,9 @@ export function useChatComposerState({
     getInputProps,
     isDragActive,
     openImagePicker: open,
+    isRecording,
+    isTranscribing,
+    handleMicClick,
     handleSubmit,
     handleInputChange,
     handleKeyDown,

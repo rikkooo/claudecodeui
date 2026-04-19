@@ -75,6 +75,9 @@ interface ChatComposerProps {
   getRootProps: (...args: unknown[]) => Record<string, unknown>;
   getInputProps: (...args: unknown[]) => Record<string, unknown>;
   openImagePicker: () => void;
+  isRecording: boolean;
+  isTranscribing: boolean;
+  onMicClick: () => void;
   inputHighlightRef: RefObject<HTMLDivElement>;
   renderInputWithMentions: (text: string) => ReactNode;
   textareaRef: RefObject<HTMLTextAreaElement>;
@@ -131,6 +134,9 @@ export default function ChatComposer({
   getRootProps,
   getInputProps,
   openImagePicker,
+  isRecording,
+  isTranscribing,
+  onMicClick,
   inputHighlightRef,
   renderInputWithMentions,
   textareaRef,
@@ -283,7 +289,7 @@ export default function ChatComposer({
         >
           <input {...getInputProps()} />
           <div ref={inputHighlightRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
-            <div className="chat-input-placeholder block w-full whitespace-pre-wrap break-words py-1.5 pl-12 pr-20 text-base leading-6 text-transparent sm:py-4 sm:pr-40">
+            <div className="chat-input-placeholder block w-full whitespace-pre-wrap break-words py-1.5 pl-20 pr-20 text-base leading-6 text-transparent sm:py-4 sm:pr-40">
               {renderInputWithMentions(input)}
             </div>
           </div>
@@ -301,7 +307,7 @@ export default function ChatComposer({
               onBlur={() => onInputFocusChange?.(false)}
               onInput={onTextareaInput}
               placeholder={placeholder}
-              className="chat-input-placeholder block max-h-[40vh] min-h-[50px] w-full resize-none overflow-y-auto rounded-2xl bg-transparent py-1.5 pl-12 pr-20 text-base leading-6 text-foreground placeholder-muted-foreground/50 transition-all duration-200 focus:outline-none sm:max-h-[300px] sm:min-h-[80px] sm:py-4 sm:pr-40"
+              className="chat-input-placeholder block max-h-[40vh] min-h-[50px] w-full resize-none overflow-y-auto rounded-2xl bg-transparent py-1.5 pl-20 pr-20 text-base leading-6 text-foreground placeholder-muted-foreground/50 transition-all duration-200 focus:outline-none sm:max-h-[300px] sm:min-h-[80px] sm:py-4 sm:pr-40"
               style={{ height: '50px' }}
             />
 
@@ -319,6 +325,35 @@ export default function ChatComposer({
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={onMicClick}
+              disabled={isTranscribing}
+              aria-pressed={isRecording}
+              className={`absolute left-11 top-1/2 -translate-y-1/2 transform rounded-xl p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                isRecording ? 'bg-red-500/15 hover:bg-red-500/25' : 'hover:bg-accent/60'
+              }`}
+              title={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing…' : 'Record voice message'}
+            >
+              {isTranscribing ? (
+                <svg className="h-5 w-5 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              ) : isRecording ? (
+                <span className="relative flex h-5 w-5 items-center justify-center">
+                  <span className="absolute inline-flex h-5 w-5 animate-ping rounded-full bg-red-500 opacity-60" />
+                  <svg className="relative h-3 w-3 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                    <rect x="6" y="6" width="12" height="12" rx="1.5" />
+                  </svg>
+                </span>
+              ) : (
+                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18.75a6 6 0 006-6v-1.5M12 18.75a6 6 0 01-6-6v-1.5m6 7.5v3m-3 0h6M12 15.75a3 3 0 01-3-3v-6a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              )}
             </button>
 
             <button
@@ -340,7 +375,7 @@ export default function ChatComposer({
             </button>
 
             <div
-              className={`pointer-events-none absolute bottom-1 left-12 right-14 hidden text-xs text-muted-foreground/50 transition-opacity duration-200 sm:right-40 sm:block ${
+              className={`pointer-events-none absolute bottom-1 left-20 right-14 hidden text-xs text-muted-foreground/50 transition-opacity duration-200 sm:right-40 sm:block ${
                 input.trim() ? 'opacity-0' : 'opacity-100'
               }`}
             >

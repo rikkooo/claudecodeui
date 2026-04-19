@@ -156,6 +156,9 @@ function ChatInterface({
     getInputProps,
     isDragActive,
     openImagePicker,
+    isRecording,
+    isTranscribing,
+    handleMicClick,
     handleSubmit,
     handleInputChange,
     handleKeyDown,
@@ -382,6 +385,9 @@ function ChatInterface({
           getRootProps={getRootProps as (...args: unknown[]) => Record<string, unknown>}
           getInputProps={getInputProps as (...args: unknown[]) => Record<string, unknown>}
           openImagePicker={openImagePicker}
+          isRecording={isRecording}
+          isTranscribing={isTranscribing}
+          onMicClick={handleMicClick}
           inputHighlightRef={inputHighlightRef}
           renderInputWithMentions={renderInputWithMentions}
           textareaRef={textareaRef}
