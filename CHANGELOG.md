@@ -3,6 +3,21 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.2](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.1...v1.29.5-conectta.2) (2026-04-20)
+
+Peaceful-cyberpunk theme pass + node-pty terminal plugin fix.
+
+### New Features
+
+* **theme:** new `cyberpunk` variant — dark-gray bg (no blues), violet/indigo primary, sage/lavender/amber accents. Three-way `ThemeSelector` (Light / Dark / Cyberpunk) replaces the binary dark-mode toggle in Appearance settings. Meta `theme-color` updates per variant ([96e07e0](https://github.com/rikkooo/claudecodeui/commit/96e07e0))
+* **theme:** Prism syntax highlighter swaps to a cyberpunk-retoned palette when the variant is active — no more saturated green on code/terminal blocks ([79b35e5](https://github.com/rikkooo/claudecodeui/commit/79b35e5))
+* **theme:** hard-coded `green-*` / `bg-green-*` utility overrides retone to sage under `.cyberpunk`; user chat bubble + scroll-to-latest button use the shared `primary` token so they match the "+ New Session" affordance ([2ca2e8e](https://github.com/rikkooo/claudecodeui/commit/2ca2e8e))
+
+### Bug Fixes
+
+* **terminal:** `cloudcli-plugin-terminal` failed with "Cannot find module 'node-pty'" on both `:3001` and `:3002`. Root cause: the plugin shipped with `node-pty@1.1.0` which has no `linux-x64` prebuild, so the native binding load silently failed and the plugin's `findModule` traversal surfaced only the generic missing-module error. Fix: upgrade the plugin's local `node-pty` to `^1.2.0-beta.12` which ships the prebuild
+
+
 ## [1.29.5-conectta.1](https://github.com/rikkooo/claudecodeui/compare/v1.29.5...v1.29.5-conectta.1) (2026-04-20)
 
 Conectta fork. Parallel build on :3002 exposed at `cloudcli-dev.conectta.co` (Google OAuth, single-email allowlist). Stock instance on :3001 / `cloudcli.conectta.co` untouched.
