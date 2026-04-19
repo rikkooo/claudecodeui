@@ -117,6 +117,43 @@
     --nav-input-bg: 217.2 32.6% 17.5% / 0.5;
     --nav-input-focus-ring: 217.2 91.2% 59.8% / 0.25;
   }
+
+  /* Cyberpunk Relax — warm dark grays, electric indigo, acid-green accents.
+     Applied ALONGSIDE .dark so every existing dark: utility still kicks in;
+     this block overrides the CSS vars where we want a different palette. */
+  .cyberpunk {
+    --background: 240 6% 7%;
+    --foreground: 220 20% 92%;
+    --card: 240 5% 10%;
+    --card-foreground: 220 20% 92%;
+    --popover: 240 5% 10%;
+    --popover-foreground: 220 20% 92%;
+    --primary: 248 96% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 273 60% 82%;
+    --muted: 240 4% 14%;
+    --muted-foreground: 240 6% 62%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 85 88% 68%;
+    --destructive: 2 75% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 4% 20%;
+    --input: 240 4% 24%;
+    --ring: 248 96% 66%;
+
+    /* Nav design tokens — cyberpunk overrides */
+    --nav-glass-bg: 240 5% 9% / 0.55;
+    --nav-glass-blur: 28px;
+    --nav-glass-saturate: 1.4;
+    --nav-tab-glow: 248 96% 66% / 0.30;
+    --nav-tab-ring: 248 96% 66% / 0.18;
+    --nav-float-shadow: 248 40% 3% / 0.55;
+    --nav-float-ring: 240 4% 22% / 0.4;
+    --nav-divider-color: 240 4% 20% / 0.5;
+    --nav-input-bg: 240 4% 14% / 0.55;
+    --nav-input-focus-ring: 248 96% 66% / 0.25;
+  }
 }
 
 @layer base {

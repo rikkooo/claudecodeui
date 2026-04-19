@@ -2,6 +2,46 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
+const LIGHT = 'light';
+const DARK = 'dark';
+const CYBERPUNK = 'cyberpunk';
+const THEMES = [LIGHT, DARK, CYBERPUNK];
+
+const META_THEME_COLOR = {
+  [LIGHT]: '#ffffff',
+  [DARK]: '#0c1117',
+  [CYBERPUNK]: '#111012',
+};
+
+function applyThemeToDom(theme) {
+  const root = document.documentElement;
+  root.classList.remove('dark', 'cyberpunk');
+  if (theme === DARK) {
+    root.classList.add('dark');
+  } else if (theme === CYBERPUNK) {
+    root.classList.add('dark', 'cyberpunk');
+  }
+
+  const statusBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusBar) {
+    statusBar.setAttribute('content', theme === LIGHT ? 'default' : 'black-translucent');
+  }
+
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) {
+    themeColor.setAttribute('content', META_THEME_COLOR[theme] ?? META_THEME_COLOR[LIGHT]);
+  }
+}
+
+function initialTheme() {
+  const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null;
+  if (saved && THEMES.includes(saved)) return saved;
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
+  }
+  return LIGHT;
+}
+
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -11,84 +51,46 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Check for saved theme preference or default to system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme === 'dark';
-    }
-    
-    // Check system preference
-    if (window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    
-    return false;
-  });
+  const [theme, setThemeState] = useState(initialTheme);
 
-  // Update document class and localStorage when theme changes
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      
-      // Update iOS status bar style and theme color for dark mode
-      const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', 'black-translucent');
-      }
-      
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#0c1117'); // Dark background color (hsl(222.2 84% 4.9%))
-      }
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      
-      // Update iOS status bar style and theme color for light mode
-      const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', 'default');
-      }
-      
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#ffffff'); // Light background color
-      }
+    applyThemeToDom(theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      /* noop — private mode, etc. */
     }
-  }, [isDarkMode]);
+  }, [theme]);
 
-  // Listen for system theme changes
   useEffect(() => {
-    if (!window.matchMedia) return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      // Only update if user hasn't manually set a preference
-      const savedTheme = localStorage.getItem('theme');
-      if (!savedTheme) {
-        setIsDarkMode(e.matches);
+    if (!window.matchMedia) return undefined;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (event) => {
+      const saved = localStorage.getItem('theme');
+      if (!saved) {
+        setThemeState(event.matches ? DARK : LIGHT);
       }
     };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
+  const setTheme = (next) => {
+    if (!THEMES.includes(next)) return;
+    setThemeState(next);
+  };
+
   const toggleDarkMode = () => {
-    setIsDarkMode(prev => !prev);
+    setThemeState((prev) => (prev === LIGHT ? DARK : LIGHT));
   };
 
   const value = {
-    isDarkMode,
+    theme,
+    setTheme,
+    availableThemes: THEMES,
+    isDarkMode: theme !== LIGHT,
     toggleDarkMode,
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
