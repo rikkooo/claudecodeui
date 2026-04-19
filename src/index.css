@@ -128,7 +128,7 @@
     --card-foreground: 220 20% 92%;
     --popover: 240 5% 10%;
     --popover-foreground: 220 20% 92%;
-    --primary: 248 96% 66%;
+    --primary: 258 88% 67%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 4% 16%;
     --secondary-foreground: 273 60% 82%;
@@ -140,19 +140,19 @@
     --destructive-foreground: 0 0% 100%;
     --border: 240 4% 20%;
     --input: 240 4% 24%;
-    --ring: 248 96% 66%;
+    --ring: 258 88% 67%;
 
     /* Nav design tokens — cyberpunk overrides */
     --nav-glass-bg: 240 5% 9% / 0.55;
     --nav-glass-blur: 28px;
     --nav-glass-saturate: 1.4;
-    --nav-tab-glow: 248 96% 66% / 0.30;
-    --nav-tab-ring: 248 96% 66% / 0.18;
-    --nav-float-shadow: 248 40% 3% / 0.55;
+    --nav-tab-glow: 258 88% 67% / 0.30;
+    --nav-tab-ring: 258 88% 67% / 0.18;
+    --nav-float-shadow: 258 40% 3% / 0.55;
     --nav-float-ring: 240 4% 22% / 0.4;
     --nav-divider-color: 240 4% 20% / 0.5;
     --nav-input-bg: 240 4% 14% / 0.55;
-    --nav-input-focus-ring: 248 96% 66% / 0.25;
+    --nav-input-focus-ring: 258 88% 67% / 0.25;
   }
 
   /* Cyberpunk — retone hardcoded bright greens (terminal previews, Bash output,

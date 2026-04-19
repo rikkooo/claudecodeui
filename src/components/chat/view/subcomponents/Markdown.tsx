@@ -8,6 +8,8 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTranslation } from 'react-i18next';
 import { normalizeInlineCodeFences } from '../../utils/chatFormatting';
 import { copyTextToClipboard } from '../../../../utils/clipboard';
+import { useTheme } from '../../../../contexts/ThemeContext';
+import { cyberpunkSyntax } from './syntaxStyles';
 
 type MarkdownProps = {
   children: React.ReactNode;
@@ -23,6 +25,7 @@ type CodeBlockProps = {
 
 const CodeBlock = ({ node, inline, className, children, ...props }: CodeBlockProps) => {
   const { t } = useTranslation('chat');
+  const { theme } = useTheme() as { theme: 'light' | 'dark' | 'cyberpunk' };
   const [copied, setCopied] = useState(false);
   const raw = Array.isArray(children) ? children.join('') : String(children ?? '');
   const looksMultiline = /[\r\n]/.test(raw);
@@ -96,7 +99,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: CodeBlockPro
 
       <SyntaxHighlighter
         language={language}
-        style={oneDark}
+        style={theme === 'cyberpunk' ? cyberpunkSyntax : oneDark}
         customStyle={{
           margin: 0,
           borderRadius: '0.5rem',
