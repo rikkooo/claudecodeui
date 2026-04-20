@@ -104,6 +104,27 @@ export function useShellTerminal({
 
     nextTerminal.open(terminalContainerRef.current);
 
+    // The WebGL renderer caches its glyph atlas at open() time. If the Nerd Font is
+    // still loading when we get here (common on first paint), the atlas locks in with
+    // fallback metrics and custom glyphs render as tofu. Force a re-measure once the
+    // font actually resolves by bouncing fontFamily — xterm clears the atlas on change.
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      Promise.all([
+        document.fonts.load('14px "JetBrainsMono Nerd Font"'),
+        document.fonts.load('bold 14px "JetBrainsMono Nerd Font"'),
+      ])
+        .then(() => {
+          if (terminalRef.current !== nextTerminal) {
+            return;
+          }
+          const currentFont = nextTerminal.options.fontFamily;
+          nextTerminal.options.fontFamily = 'monospace';
+          nextTerminal.options.fontFamily = currentFont;
+          fitAddonRef.current?.fit();
+        })
+        .catch(() => {});
+    }
+
     const copyTerminalSelection = async () => {
       const selection = nextTerminal.getSelection();
       if (!selection) {

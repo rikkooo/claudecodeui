@@ -3,6 +3,15 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.4](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.3...v1.29.5-conectta.4) (2026-04-20)
+
+Make the Nerd Font actually land in xterm.js.
+
+### Bug Fixes
+
+* **terminal:** xterm's WebGL renderer was caching its glyph atlas at `open()` time using fallback-font metrics, so the Nerd Font bundled in `-conectta.3` loaded over the network but never reached the terminal — powerline separators + prompt glyphs rendered as tofu. Two fixes: (1) `<link rel="preload">` both woff2 weights in `index.html` so the font fetch starts with the initial document, and (2) after `terminal.open()` await `document.fonts.load()` for both weights, then bounce `options.fontFamily` to force xterm to rebuild its texture atlas with the now-resolved font
+
+
 ## [1.29.5-conectta.3](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.2...v1.29.5-conectta.3) (2026-04-20)
 
 Cyberpunk-relax goes whole-stack: xterm.js now matches the rest of the UI and the oh-my-posh prompt.
