@@ -3,6 +3,15 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.5](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.4...v1.29.5-conectta.5) (2026-04-20)
+
+More aggressive Nerd-Font atlas rebuild — `.4`'s `fontFamily` bounce alone wasn't enough in the WebGL path.
+
+### Bug Fixes
+
+* **terminal:** hold a reference to the `WebglAddon` and call `clearTextureAtlas()` explicitly after `document.fonts.load()` resolves for both weights, in addition to the `fontFamily` bounce. Also `refresh(0, rows-1)` to force a full repaint so PUA glyphs (powerline separators, Font Awesome shell/clock, Devicons git/node/python) render from the Nerd Font instead of staying as tofu
+
+
 ## [1.29.5-conectta.4](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.3...v1.29.5-conectta.4) (2026-04-20)
 
 Make the Nerd Font actually land in xterm.js.

@@ -96,18 +96,22 @@ export function useShellTerminal({
       nextTerminal.loadAddon(new WebLinksAddon());
     }
 
+    // Keep a handle to the WebGL addon so we can force an atlas rebuild after the
+    // Nerd Font resolves — otherwise PUA glyphs (powerline/Font Awesome/Devicons)
+    // stay as tofu even when the font loads afterwards.
+    let webglAddon: WebglAddon | null = null;
     try {
-      nextTerminal.loadAddon(new WebglAddon());
+      webglAddon = new WebglAddon();
+      nextTerminal.loadAddon(webglAddon);
     } catch {
+      webglAddon = null;
       console.warn('[Shell] WebGL renderer unavailable, using Canvas fallback');
     }
 
     nextTerminal.open(terminalContainerRef.current);
 
-    // The WebGL renderer caches its glyph atlas at open() time. If the Nerd Font is
-    // still loading when we get here (common on first paint), the atlas locks in with
-    // fallback metrics and custom glyphs render as tofu. Force a re-measure once the
-    // font actually resolves by bouncing fontFamily — xterm clears the atlas on change.
+    // Wait for both font weights to actually resolve, then wipe the WebGL glyph
+    // atlas so the next frame re-measures with the Nerd Font present.
     if (typeof document !== 'undefined' && 'fonts' in document) {
       Promise.all([
         document.fonts.load('14px "JetBrainsMono Nerd Font"'),
@@ -117,10 +121,13 @@ export function useShellTerminal({
           if (terminalRef.current !== nextTerminal) {
             return;
           }
+          webglAddon?.clearTextureAtlas?.();
+          // Bounce fontFamily too — some xterm builds only rebuild the atlas on this.
           const currentFont = nextTerminal.options.fontFamily;
           nextTerminal.options.fontFamily = 'monospace';
           nextTerminal.options.fontFamily = currentFont;
           fitAddonRef.current?.fit();
+          nextTerminal.refresh(0, Math.max(0, nextTerminal.rows - 1));
         })
         .catch(() => {});
     }
