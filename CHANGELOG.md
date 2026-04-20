@@ -3,6 +3,15 @@
 All notable changes to CloudCLI UI will be documented in this file.
 
 
+## [1.29.5-conectta.6](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.5...v1.29.5-conectta.6) (2026-04-20)
+
+Align dev instance with the 1M-token context window Opus 4.7 actually exposes.
+
+### Changed
+
+* **env:** `.env.example` defaults `CONTEXT_WINDOW` + `VITE_CONTEXT_WINDOW` to `1000000` (1M) with a note that 160000 is only right for Sonnet/Haiku. The token-budget wheel in the chat input had been clamping against 160k on the dev instance, so sessions were reporting 80–90% full when they were actually ~14% full against the real 1M ceiling. Prod instance was already correct; this release closes the parity gap
+
+
 ## [1.29.5-conectta.5](https://github.com/rikkooo/claudecodeui/compare/v1.29.5-conectta.4...v1.29.5-conectta.5) (2026-04-20)
 
 More aggressive Nerd-Font atlas rebuild — `.4`'s `fontFamily` bounce alone wasn't enough in the WebGL path.
