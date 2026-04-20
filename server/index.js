@@ -2163,6 +2163,62 @@ app.post('/api/projects/:projectName/transcribe', authenticateToken, async (req,
     }
 });
 
+// Text-to-speech endpoint (fal.ai Orpheus proxy)
+const ORPHEUS_VOICES = new Set(['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe']);
+
+app.post('/api/projects/:projectName/tts', authenticateToken, async (req, res) => {
+    try {
+        if (!process.env.FAL_KEY) {
+            return res.status(500).json({ error: 'FAL_KEY is not configured on the server' });
+        }
+
+        const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+        if (!text) {
+            return res.status(400).json({ error: 'Missing required field: text' });
+        }
+        // Orpheus is happiest under ~5k chars; truncate hard to keep latency + cost bounded.
+        const boundedText = text.length > 4000 ? `${text.slice(0, 4000)}…` : text;
+
+        const requestedVoice = typeof req.body?.voice === 'string' ? req.body.voice.toLowerCase() : 'tara';
+        const voice = ORPHEUS_VOICES.has(requestedVoice) ? requestedVoice : 'tara';
+
+        const falResp = await fetch('https://fal.run/fal-ai/orpheus-tts', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Key ${process.env.FAL_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: boundedText,
+                voice,
+                temperature: 0.7,
+                repetition_penalty: 1.2,
+            }),
+        });
+
+        if (!falResp.ok) {
+            const errText = await falResp.text();
+            console.error('[Orpheus] upstream error', falResp.status, errText);
+            return res.status(502).json({ error: 'TTS failed', status: falResp.status, details: errText });
+        }
+
+        const data = await falResp.json();
+        const audioUrl = data?.audio?.url;
+        if (!audioUrl) {
+            console.error('[Orpheus] missing audio.url in response', data);
+            return res.status(502).json({ error: 'TTS response missing audio url' });
+        }
+        res.json({
+            audioUrl,
+            contentType: data.audio.content_type || 'audio/wav',
+            voice,
+        });
+    } catch (error) {
+        console.error('Error in tts endpoint:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Get token usage for a specific session
 app.get('/api/projects/:projectName/sessions/:sessionId/token-usage', authenticateToken, async (req, res) => {
     try {

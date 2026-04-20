@@ -13,6 +13,7 @@ import type { Project } from '../../../../types/app';
 import { ToolRenderer, shouldHideToolResult } from '../../tools';
 import { Markdown } from './Markdown';
 import MessageCopyControl from './MessageCopyControl';
+import MessageTtsControl from './MessageTtsControl';
 
 type DiffLine = {
   type: string;
@@ -460,7 +461,10 @@ const MessageComponent = memo(({ message, prevMessage, createDiff, onFileOpen, o
             {(shouldShowAssistantCopyControl || !isGrouped) && (
               <div className="mt-1 flex w-full items-center gap-2 text-[11px] text-gray-400 dark:text-gray-500">
                 {shouldShowAssistantCopyControl && (
-                  <MessageCopyControl content={assistantCopyContent} messageType="assistant" />
+                  <>
+                    <MessageCopyControl content={assistantCopyContent} messageType="assistant" />
+                    <MessageTtsControl content={assistantCopyContent} selectedProject={selectedProject} />
+                  </>
                 )}
                 {!isGrouped && <span>{formattedTime}</span>}
               </div>
