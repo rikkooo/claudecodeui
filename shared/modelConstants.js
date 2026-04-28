@@ -11,14 +11,18 @@
  * - API format ('claude-sonnet-4.5') - used by slash commands for display
  */
 export const CLAUDE_MODELS = {
-  // Models in SDK format (what the actual SDK accepts)
+  // Models in SDK format (what the actual SDK accepts).
+  // Aliases ("opus", "sonnet", "haiku") resolve at the claude-code CLI to the IDs
+  // pinned by ANTHROPIC_DEFAULT_*_MODEL env vars (see ~/.claude/providers/cloudcli.env).
   OPTIONS: [
-    { value: "sonnet", label: "Sonnet" },
-    { value: "opus", label: "Opus" },
-    { value: "haiku", label: "Haiku" },
+    { value: "opus", label: "Opus 4.7 (Peppe-grade)" },
+    { value: "opus[1m]", label: "Opus 4.7 [1M]" },
+    { value: "claude-opus-4-7", label: "Opus 4.7 (explicit)" },
     { value: "opusplan", label: "Opus Plan" },
-    { value: "sonnet[1m]", label: "Sonnet [1M]" },
-    { value: "opus[1m]", label: "Opus [1M]" },
+    { value: "sonnet", label: "Sonnet 4.6" },
+    { value: "sonnet[1m]", label: "Sonnet 4.6 [1M]" },
+    { value: "haiku", label: "Haiku 4.5" },
+    { value: "claude-opus-4-6", label: "Opus 4.6 (legacy)" },
   ],
 
   DEFAULT: "opus",

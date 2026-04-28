@@ -197,8 +197,8 @@ function mapCliOptionsToSDK(options = {}) {
 
   sdkOptions.disallowedTools = settings.disallowedTools || [];
 
-  // Map model (default to sonnet)
-  // Valid models: sonnet, opus, haiku, opusplan, sonnet[1m]
+  // Default model = CLAUDE_MODELS.DEFAULT (currently "opus" — pinned to claude-opus-4-7
+  // by ANTHROPIC_DEFAULT_OPUS_MODEL in the systemd unit's EnvironmentFile).
   sdkOptions.model = options.model || CLAUDE_MODELS.DEFAULT;
   // Model logged at query start below
 
