@@ -199,6 +199,7 @@ export async function queryCodex(command, options = {}, ws) {
     cwd,
     projectPath,
     model,
+    reasoningEffort,
     permissionMode = 'default'
   } = options;
 
@@ -215,13 +216,16 @@ export async function queryCodex(command, options = {}, ws) {
     // Initialize Codex SDK
     codex = new Codex();
 
-    // Thread options with sandbox and approval settings
+    // PP-051 / MOD-049 (2026-05-01): propagate reasoning_effort into thread options.
+    // Codex SDK accepts model_reasoning_effort via -c override (mirrored as
+    // modelReasoningEffort in the SDK). HQ standard is "high" for DD work.
     const threadOptions = {
       workingDirectory,
       skipGitRepoCheck: true,
       sandboxMode,
       approvalPolicy,
-      model
+      model,
+      ...(reasoningEffort ? { modelReasoningEffort: reasoningEffort } : {})
     };
 
     // Start or resume thread

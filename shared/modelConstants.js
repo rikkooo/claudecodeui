@@ -54,15 +54,24 @@ export const CURSOR_MODELS = {
     { value: "grok", label: "Grok" },
   ],
 
-  DEFAULT: "gpt-5-3-codex",
+  // PP-051 / MOD-049 (2026-05-01): typo fix — was "gpt-5-3-codex" (dashes),
+  // OPTIONS uses "gpt-5.3-codex" (dots). Default never matched picker without the fix.
+  DEFAULT: "gpt-5.3-codex",
 };
 
 /**
  * Codex (OpenAI) Models
+ *
+ * PP-051 / MOD-049 (2026-05-01): defaults updated to gpt-5.5 (latest, strict 272k context).
+ * For 1M-context DD work, escalate to gpt-5.4 or codex-auto-review (both scale to 1M).
+ * See ~/projects/conectta-platform/modules/MOD-049-provider-hardening/recon/PHASE-0-FINDINGS.md F5.
+ * Pair with `model_reasoning_effort = "high"` in ~/.codex/config.toml (Phase 2).
  */
 export const CODEX_MODELS = {
   OPTIONS: [
-    { value: "gpt-5.4", label: "GPT-5.4" },
+    { value: "gpt-5.5", label: "GPT-5.5 (latest, 272k)" },
+    { value: "gpt-5.4", label: "GPT-5.4 (1M context)" },
+    { value: "codex-auto-review", label: "Codex Auto-Review (1M, DD-tuned)" },
     { value: "gpt-5.4-mini", label: "GPT-5.4 mini" },
     { value: "gpt-5.3-codex", label: "GPT-5.3 Codex" },
     { value: "gpt-5.2-codex", label: "GPT-5.2 Codex" },
@@ -72,7 +81,7 @@ export const CODEX_MODELS = {
     { value: "o4-mini", label: "O4-mini" },
   ],
 
-  DEFAULT: "gpt-5.4",
+  DEFAULT: "gpt-5.5",
 };
 
 /**

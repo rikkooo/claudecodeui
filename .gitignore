@@ -140,3 +140,6 @@ tasks/
 
 # Git worktrees
 .worktrees/
+
+# PP-051 / MOD-049 patch backups (peppe local; not for upstream)
+*.bak.preprovider-hardening

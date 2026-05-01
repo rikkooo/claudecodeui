@@ -968,11 +968,15 @@ router.post('/', validateExternalApiKey, async (req, res) => {
     } else if (provider === 'codex') {
       console.log('🤖 Starting Codex SDK session');
 
+      // PP-051 / MOD-049 (2026-05-01): pin reasoning_effort=high for codex DD work.
+      // gpt-5.5 default is medium; HQ standard is high (Riko 2026-05-01 directive).
+      // Override via env CODEX_REASONING_EFFORT for ad-hoc tuning.
       await queryCodex(message.trim(), {
         projectPath: finalProjectPath,
         cwd: finalProjectPath,
         sessionId: sessionId || null,
         model: model || CODEX_MODELS.DEFAULT,
+        reasoningEffort: process.env.CODEX_REASONING_EFFORT || 'high',
         permissionMode: 'bypassPermissions'
       }, writer);
     } else if (provider === 'gemini') {

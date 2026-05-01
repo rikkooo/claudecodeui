@@ -307,15 +307,19 @@ function extractTokenBudget(resultMessage) {
   // Total used = input + output + cache tokens
   const totalUsed = inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens;
 
-  // Use configured context window budget from environment (default 160000)
-  // This is the user's budget limit, not the model's context window
-  const contextWindow = parseInt(process.env.CONTEXT_WINDOW) || 160000;
+  // PP-051 / MOD-049 (2026-05-01): prefer actual model contextWindow from API
+  // (modelData.contextWindow, e.g. 1000000 for claude-opus-4-7) over the env-configured
+  // UI cap. Falls back to env then 160000 default. Model name surfaced for UI display.
+  const contextWindow = modelData.contextWindow || parseInt(process.env.CONTEXT_WINDOW) || 160000;
+  const maxOutputTokens = modelData.maxOutputTokens || null;
 
   // Token calc logged via token-budget WS event
 
   return {
     used: totalUsed,
-    total: contextWindow
+    total: contextWindow,
+    model: modelKey,
+    maxOutputTokens
   };
 }
 
