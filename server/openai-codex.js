@@ -288,7 +288,23 @@ export async function queryCodex(command, options = {}, ws) {
       // Extract and send token usage if available (normalized to match Claude format)
       if (event.type === 'turn.completed' && event.usage) {
         const totalTokens = (event.usage.input_tokens || 0) + (event.usage.output_tokens || 0);
-        sendMessage(ws, createNormalizedMessage({ kind: 'status', text: 'token_budget', tokenBudget: { used: totalTokens, total: 200000 }, sessionId: currentSessionId, provider: 'codex' }));
+        // PP-051 / MOD-049 (2026-05-02 iter-2 fix): surface the ACTIVE Codex context window.
+        // `codex debug models` reports context_window=272000 for every Codex model in this catalog;
+        // gpt-5.4 + codex-auto-review carry max_context_window=1000000 but the activation path is
+        // not wired in this SDK release — display active, not max. Future PP can revisit if/when
+        // the 1M ceiling is reachable from CloudCLI's invocation path.
+        const codexCtxByModel = {
+          'gpt-5.5': 272000,
+          'gpt-5.4': 272000,
+          'codex-auto-review': 272000,
+          'gpt-5.4-mini': 272000,
+          'gpt-5.3-codex': 272000,
+          'gpt-5.2-codex': 272000,
+          'gpt-5.2': 272000,
+          'gpt-5.1-codex-max': 272000,
+        };
+        const ctxTotal = codexCtxByModel[model] || 272000;
+        sendMessage(ws, createNormalizedMessage({ kind: 'status', text: 'token_budget', tokenBudget: { used: totalTokens, total: ctxTotal, model, provider: 'codex' }, sessionId: currentSessionId, provider: 'codex' }));
       }
     }
 
